@@ -1,0 +1,6 @@
+
+# Windows
+desktop.ini
+*.bat
+.writetest
+RD/
