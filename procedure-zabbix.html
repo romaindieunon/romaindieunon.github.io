@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procédure Zabbix — Romain Dieunon</title>
+    <meta name="description" content="Procédure d'installation d'un superviseur Zabbix 7.0 LTS sur une VM Debian 13 (Trixie) hébergée sur Proxmox, intégrée au réseau du projet BTS SIO.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Romain Dieunon">
+    <meta property="og:title" content="Procédure Zabbix — Romain Dieunon">
+    <meta property="og:description" content="Procédure d'installation d'un superviseur Zabbix 7.0 LTS sur une VM Debian 13 (Trixie) hébergée sur Proxmox, intégrée au réseau du projet BTS SIO.">
+    <meta property="og:url" content="https://romaindieunon.github.io/procedure-zabbix.html">
+    <meta property="og:image" content="https://romaindieunon.github.io/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="fr_FR">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://romaindieunon.github.io/procedure-zabbix.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='Inter,sans-serif' font-size='14' font-weight='700'%3ERD%3C/text%3E%3C/svg%3E">
+    <style>
+        .proj-toc { background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem 1.75rem; margin: 1.5rem 0 2rem; }
+        .proj-toc h4 { margin: 0 0 0.75rem; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+        .proj-toc ol { margin: 0; padding-left: 1.25rem; }
+        .proj-toc ol li { margin: 0.35rem 0; }
+        .proj-toc a { color: var(--primary); text-decoration: none; }
+        .proj-toc a:hover { text-decoration: underline; }
+        .proj-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .proj-meta-item { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem 1.25rem; }
+        .proj-meta-item span { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.25rem; }
+        .proj-meta-item strong { font-size: 1rem; color: var(--text); }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary); text-decoration: none; font-weight: 500; margin-top: 2rem; }
+        .back-link:hover { text-decoration: underline; }
+        .cmd-block { background: #0f172a; color: #e2e8f0; padding: 0.85rem 1.1rem; border-radius: 6px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9rem; margin: 0.4rem 0 0.85rem; overflow-x: auto; white-space: pre; }
+        .step-block { margin: 1.75rem 0; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+        .step-block:last-of-type { border-bottom: none; }
+        .step-block h4 { color: var(--primary); margin-top: 0; }
+        .step-block ul { margin: 0.5rem 0 1rem; padding-left: 1.25rem; }
+        .step-block ul li { margin: 0.35rem 0; line-height: 1.55; }
+        /* Les styles .proc-screen, .proc-screens et .proc-lightbox sont définis dans css/style.css */
+        .placeholder-cli { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem 1.25rem; border-radius: 4px; margin: 1rem 0; color: #78350f; font-size: 0.95rem; }
+        .placeholder-cli strong { color: #78350f; }
+        .substep-title { font-weight: 600; color: var(--text); margin: 1.25rem 0 0.5rem; padding-left: 0.5rem; border-left: 3px solid var(--primary); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-wrap">
+        <a href="index.html" class="logo"><span class="logo-dot"></span>Romain DIEUNON</a>
+        <button class="nav-toggle" aria-label="Ouvrir le menu"><span></span><span></span><span></span></button>
+        <ul class="nav-links">
+            <li><a href="index.html">Accueil</a></li>
+            <li><a href="profil.html">Profil</a></li>
+            <li><a href="projets.html" class="active">Projets</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </div>
+</nav>
+
+<section class="page-hero">
+    <div class="container">
+        <p class="breadcrumb"><a href="index.html">Accueil</a> / <a href="projets.html">Projets</a> / Zabbix</p>
+        <h1>Zabbix — Installation du superviseur (VM Sigma)</h1>
+        <p>Mise en place d'une VM Debian 13 (Trixie) sous Proxmox VE pour héberger un superviseur Zabbix 7.0 LTS. La machine, nommée <strong>Sigma</strong>, s'intègre au réseau du projet BTS SIO à l'adresse <code>192.168.200.205</code> dans le VLAN Serveurs (200) et vient compléter le parc supervisé.</p>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+
+        <div class="proj-meta fade-in">
+            <div class="proj-meta-item"><span>Solution</span><strong>Zabbix 7.0 LTS</strong></div>
+            <div class="proj-meta-item"><span>OS</span><strong>Debian 13 (Trixie)</strong></div>
+            <div class="proj-meta-item"><span>Hyperviseur</span><strong>Proxmox VE — nœud Gamma</strong></div>
+            <div class="proj-meta-item"><span>Nom de la VM</span><strong>Sigma</strong></div>
+            <div class="proj-meta-item"><span>VM ID</span><strong>205</strong></div>
+            <div class="proj-meta-item"><span>Base de données</span><strong>MariaDB / MySQL</strong></div>
+            <div class="proj-meta-item"><span>Frontal web</span><strong>Apache 2 + PHP</strong></div>
+            <div class="proj-meta-item"><span>IP du serveur</span><strong>192.168.200.205/24</strong></div>
+            <div class="proj-meta-item"><span>Passerelle</span><strong>192.168.200.250</strong></div>
+            <div class="proj-meta-item"><span>VLAN</span><strong>200 — Serveurs</strong></div>
+            <div class="proj-meta-item"><span>Domaine</span><strong>BTSSIO.RD</strong></div>
+            <div class="proj-meta-item"><span>Interface admin</span><strong>http://192.168.200.205/zabbix</strong></div>
+        </div>
+
+        <div class="proj-toc fade-in">
+            <h4>Sommaire</h4>
+            <ol>
+                <li><a href="#etape1">Création de la VM Sigma sur Proxmox</a></li>
+                <li><a href="#etape2">Installation de Debian 13 (Trixie)</a></li>
+                <li><a href="#etape3">Installation de Zabbix en ligne de commande</a></li>
+                <li><a href="#etape4">Assistant web Zabbix 7.0</a></li>
+                <li><a href="#etape5">Première connexion à l'interface</a></li>
+                <li><a href="#bilan">Bilan</a></li>
+            </ol>
+        </div>
+
+        <div class="content-block fade-in">
+
+            <!-- ============== ÉTAPE 1 ============== -->
+            <div id="etape1" class="step-block">
+                <h4>Étape 1 — Création de la VM Sigma sur Proxmox</h4>
+                <p>Création d'une nouvelle machine virtuelle sur le nœud Proxmox <code>Gamma</code> via l'assistant <em>Create VM</em>. La VM est dimensionnée pour accueillir le serveur Zabbix, sa base de données MariaDB et le frontal web Apache.</p>
+
+                <p class="substep-title">1.1 — Onglet General : identification de la VM</p>
+                <ul>
+                    <li>Node : <code>Gamma</code></li>
+                    <li>VM ID : <code>205</code> (cohérent avec la dernière octet de l'IP)</li>
+                    <li>Name : <code>Sigma</code></li>
+                </ul>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212151.png" alt="Onglet General de la création de VM Proxmox">
+                    <figcaption>Onglet <em>General</em> — VM ID 205, nom Sigma, nœud Gamma.</figcaption>
+                </figure>
+
+                <p class="substep-title">1.2 — Onglet OS : choix de l'ISO Debian 13</p>
+                <ul>
+                    <li>Use CD/DVD disc image file : stockage <code>local</code></li>
+                    <li>ISO image : <code>debian-13.2.0-amd64-netinst.iso</code></li>
+                    <li>Guest OS Type : <code>Linux</code> — Version <code>6.x - 2.6 Kernel</code></li>
+                </ul>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212202.png" alt="Onglet OS de la création de VM Proxmox">
+                    <figcaption>Onglet <em>OS</em> — sélection de l'ISO Debian 13.2.0 netinst.</figcaption>
+                </figure>
+
+                <p class="substep-title">1.3 — Onglet System : agent QEMU</p>
+                <ul>
+                    <li>Graphic card : <code>Default</code></li>
+                    <li>Machine : <code>Default (i440fx)</code></li>
+                    <li>BIOS : <code>Default (SeaBIOS)</code></li>
+                    <li>SCSI Controller : <code>VirtIO SCSI single</code></li>
+                    <li><strong>Qemu Agent coché</strong> (permet à Proxmox de communiquer avec la VM pour les snapshots et l'arrêt propre)</li>
+                </ul>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212217.png" alt="Onglet System de la création de VM Proxmox">
+                    <figcaption>Onglet <em>System</em> — activation du Qemu Agent.</figcaption>
+                </figure>
+
+                <p class="substep-title">1.4 — Onglet Disks : disque système 20 GiB</p>
+                <ul>
+                    <li>Bus/Device : <code>SCSI 0</code></li>
+                    <li>Storage : <code>local-lvm</code></li>
+                    <li>Disk size : <code>20 GiB</code></li>
+                    <li>IO thread : activé (améliore les performances I/O)</li>
+                </ul>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212242.png" alt="Onglet Disks de la création de VM Proxmox">
+                    <figcaption>Onglet <em>Disks</em> — 20 GiB sur local-lvm avec IO thread.</figcaption>
+                </figure>
+
+                <p class="substep-title">1.5 — Onglet CPU : 2 cœurs</p>
+                <ul>
+                    <li>Sockets : <code>1</code></li>
+                    <li>Cores : <code>2</code> (total : 2 vCPU)</li>
+                    <li>Type : <code>x86-64-v2-AES</code></li>
+                </ul>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212310.png" alt="Onglet CPU de la création de VM Proxmox">
+                    <figcaption>Onglet <em>CPU</em> — 1 socket / 2 cœurs / x86-64-v2-AES.</figcaption>
+                </figure>
+
+                <p class="substep-title">1.6 — Onglet Memory : 2 Go de RAM</p>
+                <ul>
+                    <li>Memory (MiB) : <code>2048</code> (suffisant pour Zabbix 7 + MariaDB en lab)</li>
+                </ul>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212400.png" alt="Onglet Memory de la création de VM Proxmox">
+                    <figcaption>Onglet <em>Memory</em> — 2 048 MiB de RAM allouée.</figcaption>
+                </figure>
+
+                <p class="substep-title">1.7 — Onglet Network : bridge vmbr0</p>
+                <ul>
+                    <li>Bridge : <code>vmbr0</code> (pont par défaut vers le LAN du projet)</li>
+                    <li>Model : <code>VirtIO (paravirtualized)</code></li>
+                    <li>VLAN Tag : <code>no VLAN</code> (la VM reste dans le VLAN natif du bridge)</li>
+                    <li>Firewall : coché</li>
+                </ul>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212414.png" alt="Onglet Network de la création de VM Proxmox">
+                    <figcaption>Onglet <em>Network</em> — bridge vmbr0 en VirtIO.</figcaption>
+                </figure>
+
+                <p class="substep-title">1.8 — Onglet Confirm : récapitulatif</p>
+                <p>Vérification de l'ensemble des paramètres avant création.</p>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212421.png" alt="Récapitulatif de la création de VM Proxmox">
+                    <figcaption>Onglet <em>Confirm</em> — récapitulatif complet et clic sur <em>Finish</em>.</figcaption>
+                </figure>
+            </div>
+
+            <!-- ============== ÉTAPE 2 ============== -->
+            <div id="etape2" class="step-block">
+                <h4>Étape 2 — Installation de Debian 13 (Trixie)</h4>
+                <p>Démarrage de la VM Sigma sur l'ISO Debian. Choix de l'installation graphique et déroulement de l'assistant.</p>
+
+                <p class="substep-title">2.1 — Menu de démarrage : Graphical install</p>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212515.png" alt="Menu de démarrage Debian 13">
+                    <figcaption>Menu de boot Debian 13 — choix de <em>Graphical install</em>.</figcaption>
+                </figure>
+
+                <p class="substep-title">2.2 — Langue, pays et clavier</p>
+                <ul>
+                    <li>Langue : <strong>Français</strong></li>
+                    <li>Pays : <strong>France</strong></li>
+                </ul>
+                <div class="proc-screens">
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212539.png" alt="Choix de la langue Français">
+                        <figcaption>Sélection de la langue Français.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212551.png" alt="Choix du pays France">
+                        <figcaption>Sélection du pays France.</figcaption>
+                    </figure>
+                </div>
+
+                <p class="substep-title">2.3 — Configuration réseau manuelle</p>
+                <p>Pas de DHCP sur ce VLAN : la configuration IP est saisie à la main pendant l'installation.</p>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212853.png" alt="Configurer le réseau manuellement">
+                    <figcaption>Choix de l'option <em>Configurer vous-même le réseau</em>.</figcaption>
+                </figure>
+                <ul>
+                    <li>Adresse IP : <code>192.168.200.205</code></li>
+                    <li>Masque réseau : <code>255.255.255.0</code></li>
+                    <li>Passerelle : <code>192.168.200.250</code> (PfSense du projet)</li>
+                    <li>Serveurs DNS : <code>192.168.200.201 192.168.200.202</code> (les deux contrôleurs AD)</li>
+                </ul>
+                <div class="proc-screens">
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212918.png" alt="Adresse IP 192.168.200.205">
+                        <figcaption>Adresse IP <code>192.168.200.205</code>.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20212929.png" alt="Masque réseau 255.255.255.0">
+                        <figcaption>Masque <code>255.255.255.0</code>.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213005.png" alt="Passerelle 192.168.200.250">
+                        <figcaption>Passerelle <code>192.168.200.250</code>.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213044.png" alt="Serveurs DNS">
+                        <figcaption>Serveurs DNS pointant vers les contrôleurs AD.</figcaption>
+                    </figure>
+                </div>
+
+                <p class="substep-title">2.4 — Nom de machine et domaine</p>
+                <ul>
+                    <li>Nom de machine : <code>Sigma</code></li>
+                    <li>Domaine : <code>BTSSIO.RD</code> (domaine Active Directory du projet)</li>
+                </ul>
+                <div class="proc-screens">
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213057.png" alt="Nom de machine Sigma">
+                        <figcaption>Hostname : <code>Sigma</code>.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213122.png" alt="Domaine BTSSIO.RD">
+                        <figcaption>Domaine : <code>BTSSIO.RD</code>.</figcaption>
+                    </figure>
+                </div>
+
+                <p class="substep-title">2.5 — Mot de passe root et utilisateur standard</p>
+                <ul>
+                    <li>Mot de passe root défini (saisi deux fois)</li>
+                    <li>Création de l'utilisateur <code>administrateur</code> avec son mot de passe</li>
+                </ul>
+                <div class="proc-screens">
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213145.png" alt="Mot de passe root">
+                        <figcaption>Mot de passe du super-utilisateur <em>root</em>.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213214.png" alt="Nom de l'utilisateur administrateur">
+                        <figcaption>Création de l'utilisateur <code>administrateur</code>.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213238.png" alt="Mot de passe de l'administrateur">
+                        <figcaption>Mot de passe de l'utilisateur <code>administrateur</code>.</figcaption>
+                    </figure>
+                </div>
+
+                <p class="substep-title">2.6 — Partitionnement du disque</p>
+                <ul>
+                    <li>Méthode : <strong>Assisté — utiliser un disque entier</strong></li>
+                    <li>Disque cible : <code>SCSI1 (sda) — 21.5 GB QEMU HARDDISK</code></li>
+                    <li>Schéma : <strong>Tout dans une seule partition</strong> (recommandé pour les serveurs simples)</li>
+                    <li>Validation puis confirmation de l'écriture sur le disque (formatage <code>ext4</code> pour <code>/</code> et création d'un swap)</li>
+                </ul>
+                <div class="proc-screens">
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213540.png" alt="Méthode de partitionnement">
+                        <figcaption>Méthode <em>Assisté — utiliser un disque entier</em>.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213553.png" alt="Sélection du disque sda">
+                        <figcaption>Disque cible <code>sda</code> de 21.5 GB.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213606.png" alt="Schéma de partitionnement">
+                        <figcaption>Schéma <em>Tout dans une seule partition</em>.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213638.png" alt="Confirmation du schéma de partitionnement">
+                        <figcaption>Confirmation du schéma choisi.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213648.png" alt="Terminer le partitionnement">
+                        <figcaption>Récapitulatif des partitions (ext4 + swap) et choix <em>Terminer le partitionnement</em>.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213747.png" alt="Confirmation de l'écriture sur disque">
+                        <figcaption>Validation finale : écriture des modifications sur le disque.</figcaption>
+                    </figure>
+                </div>
+
+                <p class="substep-title">2.7 — Configuration de l'outil de paquets (APT)</p>
+                <ul>
+                    <li>Analyser d'autres supports d'installation : <strong>Non</strong></li>
+                    <li>Pays du miroir : <strong>France</strong></li>
+                    <li>Miroir Debian : <code>deb.debian.org</code></li>
+                    <li>Mandataire HTTP (proxy) : laissé <strong>vide</strong></li>
+                </ul>
+                <div class="proc-screens">
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213903.png" alt="Analyser d'autres supports - Non">
+                        <figcaption>Pas d'autres supports d'installation à analyser.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213915.png" alt="Pays du miroir France">
+                        <figcaption>Pays du miroir : France.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213931.png" alt="Miroir deb.debian.org">
+                        <figcaption>Miroir Debian : <code>deb.debian.org</code>.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20213950.png" alt="Mandataire HTTP vide">
+                        <figcaption>Pas de proxy HTTP — champ laissé vide.</figcaption>
+                    </figure>
+                </div>
+
+                <p class="substep-title">2.8 — Popularity-contest et sélection des logiciels</p>
+                <ul>
+                    <li>Participation à <em>popularity-contest</em> : <strong>Non</strong></li>
+                    <li>Logiciels installés : <strong>uniquement Serveur SSH + Utilitaires usuels du système</strong></li>
+                    <li>Tous les environnements de bureau (GNOME, Xfce, KDE, etc.) sont décochés — c'est un serveur sans interface graphique</li>
+                </ul>
+                <div class="proc-screens">
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20214309.png" alt="popularity-contest Non">
+                        <figcaption>Pas de participation à popularity-contest.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20214352.png" alt="Sélection des logiciels Serveur SSH et utilitaires">
+                        <figcaption>Sélection : Serveur SSH + Utilitaires usuels uniquement.</figcaption>
+                    </figure>
+                </div>
+
+                <p class="substep-title">2.9 — Installation du chargeur GRUB</p>
+                <p>Choix de l'installation manuelle de GRUB sur le disque principal <code>/dev/sda</code>.</p>
+                <div class="proc-screens">
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20215123.png" alt="GRUB - installation manuelle">
+                        <figcaption>Choix de spécifier manuellement le périphérique d'installation de GRUB.</figcaption>
+                    </figure>
+                    <figure class="proc-screen">
+                        <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20215134.png" alt="GRUB sur /dev/sda">
+                        <figcaption>GRUB installé sur <code>/dev/sda</code>.</figcaption>
+                    </figure>
+                </div>
+
+                <p class="substep-title">2.10 — Fin de l'installation</p>
+                <p>L'installation est terminée, la VM peut redémarrer sur le système installé. L'ISO sera automatiquement détaché.</p>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-23%20215641.png" alt="Installation Debian terminée">
+                    <figcaption>Installation terminée — redémarrage sur Debian 13.</figcaption>
+                </figure>
+            </div>
+
+            <!-- ============== ÉTAPE 3 — Installation CLI ============== -->
+            <div id="etape3" class="step-block">
+                <h4>Étape 3 — Installation de Zabbix en ligne de commande</h4>
+                <p>Après le premier reboot de la VM Sigma, toute la suite de l'installation se déroule en SSH (ou directement en console). Cette étape regroupe la mise à jour du système, l'installation de la pile LAMP (Apache, MariaDB, PHP), l'ajout du dépôt officiel Zabbix, l'installation des paquets Zabbix, la création de la base de données, l'import du schéma SQL et la configuration fine du serveur Zabbix, d'Apache et de PHP.</p>
+
+                <p class="substep-title">3.1 — Mise à jour du système</p>
+                <p>On commence toujours par s'assurer que le système est à jour avant d'installer de nouveaux services.</p>
+                <div class="cmd-block">sudo apt update && sudo apt upgrade -y</div>
+
+                <p class="substep-title">3.2 — Installation d'Apache, MariaDB et PHP</p>
+                <p>On installe le serveur web Apache 2, le SGBD MariaDB et toutes les extensions PHP requises par le frontend Zabbix (<code>mysql</code>, <code>gd</code>, <code>xml</code>, <code>bcmath</code>, <code>mbstring</code>, <code>curl</code>).</p>
+                <div class="cmd-block">sudo apt install -y apache2 mariadb-server \
+php php-mysql php-gd php-xml php-bcmath php-mbstring php-curl</div>
+
+                <p class="substep-title">3.3 — Ajout du dépôt officiel Zabbix 7.0 LTS</p>
+                <p>Les paquets Zabbix ne sont pas dans les dépôts Debian. On ajoute donc le dépôt officiel Zabbix 7.0 LTS pour Debian 13 en téléchargeant et installant le paquet <code>zabbix-release</code>, puis on rafraîchit les caches APT.</p>
+                <div class="cmd-block">wget https://repo.zabbix.com/zabbix/7.0/debian/pool/main/z/zabbix-release/zabbix-release_latest+debian13_all.deb
+sudo dpkg -i zabbix-release_latest+debian13_all.deb
+sudo apt update</div>
+
+                <p class="substep-title">3.4 — Installation des paquets Zabbix</p>
+                <p>Installation du serveur Zabbix (lié à MySQL/MariaDB), du frontend PHP et de l'agent local qui supervisera la VM Sigma elle-même.</p>
+                <div class="cmd-block">sudo apt install -y zabbix-server-mysql zabbix-frontend-php zabbix-agent</div>
+
+                <p class="substep-title">3.5 — Création de la base de données Zabbix</p>
+                <p>On se connecte à MariaDB en tant que root, puis on crée la base <code>zabbix</code> avec le jeu de caractères imposé par Zabbix 7 (<code>utf8mb4</code> + collation <code>utf8mb4_bin</code>), ainsi que l'utilisateur SQL <code>zabbix</code> avec son mot de passe et tous les privilèges sur cette base.</p>
+                <p class="placeholder-cli"><strong>Note :</strong> il s'agit d'un environnement de test. Les mots de passe sont masqués dans cette procédure ; en production, j'utiliserais un mot de passe long et unique, stocké dans un gestionnaire de mots de passe.</p>
+                <div class="cmd-block">sudo mysql</div>
+                <p>Une fois dans le prompt MariaDB :</p>
+                <div class="cmd-block">CREATE DATABASE zabbix CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+CREATE USER 'zabbix'@'localhost' IDENTIFIED BY '********';
+GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;</div>
+
+                <p class="substep-title">3.6 — Import du schéma initial (étape IMPORTANTE)</p>
+                <p>Le schéma SQL livré avec Zabbix (tables, index, vues, fonctions) doit être importé dans la base fraîchement créée. Sans cet import, l'assistant web échouera à initialiser l'application.</p>
+                <div class="cmd-block">zcat /usr/share/zabbix/sql-scripts/mysql/server.sql.gz | mysql -u zabbix -p zabbix</div>
+
+                <p class="substep-title">3.7 — Configuration du serveur Zabbix</p>
+                <p>Le démon Zabbix Server doit connaître le mot de passe de la base de données. On édite son fichier de configuration et on ajoute (ou décommente) la ligne <code>DBPassword</code>.</p>
+                <div class="cmd-block">sudo nano /etc/zabbix/zabbix_server.conf</div>
+                <p>Ajouter (ou décommenter) la ligne :</p>
+                <div class="cmd-block">DBPassword=********</div>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-25%20145524.png" alt="Édition de zabbix_server.conf avec nano">
+                    <figcaption>Fichier <code>/etc/zabbix/zabbix_server.conf</code> — paramètres <code>DBUser=zabbix</code> et <code>DBPassword</code> renseignés (mot de passe flouté).</figcaption>
+                </figure>
+
+                <p class="substep-title">3.8 — Configuration d'Apache pour Zabbix (étape TRÈS IMPORTANTE)</p>
+                <p>Par défaut, Apache ne sert pas l'alias <code>/zabbix</code>. Il faut créer (ou compléter) la configuration <code>zabbix.conf</code> pour déclarer l'alias et autoriser l'accès, puis activer le frontend Zabbix.</p>
+                <div class="cmd-block">sudo nano /etc/apache2/conf-available/zabbix.conf</div>
+                <p>Contenu à mettre :</p>
+                <div class="cmd-block">Alias /zabbix /usr/share/zabbix
+
+&lt;Directory /usr/share/zabbix&gt;
+    Require all granted
+    AllowOverride None
+&lt;/Directory&gt;</div>
+                <p>Activer la configuration et recharger Apache :</p>
+                <div class="cmd-block">sudo a2enconf zabbix-frontend-php
+sudo systemctl restart apache2</div>
+
+                <p class="substep-title">3.9 — Ajustement des paramètres PHP (sinon erreur dans l'assistant web)</p>
+                <p>Zabbix exige certaines valeurs PHP plus généreuses que les valeurs par défaut, sinon l'assistant web affichera des erreurs (taille mémoire, durée d'exécution, taille d'upload). On édite le <code>php.ini</code> de la version PHP utilisée par Apache.</p>
+                <div class="cmd-block">sudo nano /etc/php/8.4/apache2/php.ini</div>
+                <p>Modifier (ou ajouter) ces directives :</p>
+                <div class="cmd-block">post_max_size = 16M
+upload_max_filesize = 16M
+max_execution_time = 300
+max_input_time = 300
+memory_limit = 256M</div>
+                <p>Puis redémarrer Apache pour prendre en compte les modifications :</p>
+                <div class="cmd-block">sudo systemctl restart apache2</div>
+
+                <p class="substep-title">3.10 — Activation et démarrage des services</p>
+                <p>On active les quatre services au boot pour qu'ils repartent automatiquement après un reboot, puis on les redémarre tous afin qu'ils tournent avec la configuration finale.</p>
+                <div class="cmd-block">sudo systemctl enable apache2 mariadb zabbix-server zabbix-agent
+sudo systemctl restart apache2 mariadb zabbix-server zabbix-agent</div>
+            </div>
+
+            <!-- ============== ÉTAPE 4 — Assistant web ============== -->
+            <div id="etape4" class="step-block">
+                <h4>Étape 4 — Assistant web Zabbix 7.0</h4>
+                <p>L'interface est désormais accessible à l'adresse <code>http://192.168.200.205/zabbix</code> depuis le poste d'administration. L'assistant web finalise la configuration du frontal PHP.</p>
+
+                <p class="substep-title">4.1 — Bienvenue dans Zabbix 7.0</p>
+                <p>Choix de la langue de l'interface : <strong>Français (fr_FR)</strong>.</p>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-25%20153717.png" alt="Page de bienvenue Zabbix 7.0">
+                    <figcaption>Page d'accueil de l'assistant — sélection du français.</figcaption>
+                </figure>
+
+                <p class="substep-title">4.2 — Vérification des prérequis</p>
+                <p>Tous les prérequis PHP sont validés (xmlwriter, xmlreader, PHP LDAP, PHP OpenSSL, ctype, Session, gettext, curl, paramètres régionaux, etc.) — tout est marqué <strong>OK</strong>.</p>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-25%20155315.png" alt="Vérification des prérequis Zabbix">
+                    <figcaption>Tous les prérequis PHP affichent <em>OK</em>.</figcaption>
+                </figure>
+
+                <p class="substep-title">4.3 — Configuration de la connexion à la base de données</p>
+                <ul>
+                    <li>Type de base de données : <strong>MySQL</strong></li>
+                    <li>Hôte : <code>localhost</code></li>
+                    <li>Port : <code>0</code> (port par défaut)</li>
+                    <li>Nom de la base : <code>zabbix</code></li>
+                    <li>Stocker les informations d'identification dans : <strong>Texte brut</strong></li>
+                    <li>Utilisateur : <code>zabbix</code></li>
+                    <li>Mot de passe : (celui défini dans <code>zabbix_server.conf</code>)</li>
+                </ul>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-25%20162433.png" alt="Configuration de la connexion à la base de données">
+                    <figcaption>Paramètres de connexion à la base MySQL <code>zabbix</code>.</figcaption>
+                </figure>
+
+                <p class="substep-title">4.4 — Paramètres du serveur Zabbix</p>
+                <ul>
+                    <li>Nom du serveur Zabbix : <code>Sigma</code> (visible en haut à droite de l'interface une fois connecté)</li>
+                    <li>Fuseau horaire par défaut : <strong>(UTC+02:00) Europe/Paris</strong></li>
+                    <li>Thème par défaut : <strong>Bleu</strong></li>
+                </ul>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-25%20162625.png" alt="Paramètres du serveur Zabbix">
+                    <figcaption>Paramètres généraux — Sigma, fuseau Europe/Paris, thème Bleu.</figcaption>
+                </figure>
+            </div>
+
+            <!-- ============== ÉTAPE 5 — Login ============== -->
+            <div id="etape5" class="step-block">
+                <h4>Étape 5 — Première connexion à l'interface</h4>
+                <p>Une fois l'assistant terminé, l'écran de connexion Zabbix est affiché. La connexion s'effectue avec le compte par défaut <strong>Admin</strong> / <strong>zabbix</strong>, immédiatement suivi d'un changement de mot de passe via <em>Users → Admin → Change password</em> pour des raisons évidentes de sécurité.</p>
+                <figure class="proc-screen">
+                    <img src="assets/projets/zabbix/Capture%20d'%C3%A9cran%202026-05-25%20162956.png" alt="Page de connexion Zabbix">
+                    <figcaption>Écran de connexion à l'interface web Zabbix.</figcaption>
+                </figure>
+            </div>
+
+        </div>
+
+        <!-- ============== BILAN ============== -->
+        <div id="bilan" class="content-block fade-in">
+            <h3>Bilan</h3>
+            <p>
+                Le superviseur Zabbix 7.0 LTS est opérationnel sur la VM <strong>Sigma</strong> à l'adresse
+                <code>192.168.200.205</code>. Le serveur se supervise déjà lui-même grâce à l'agent Zabbix
+                installé localement. Il est désormais prêt à recevoir les hôtes du parc (contrôleurs AD,
+                PfSense, postes clients) via le déploiement d'agents et la création d'hôtes côté UI.
+            </p>
+            <p>
+                Cette procédure m'a permis de mobiliser plusieurs compétences du BTS SIO SISR : virtualisation
+                sous Proxmox, installation d'un OS Linux serveur, configuration réseau statique, administration
+                d'un SGBD MariaDB, gestion de paquets via dépôts tiers, et mise en service d'un outil de
+                supervision conforme aux standards de l'écosystème open-source.
+            </p>
+        </div>
+
+        <a href="projets.html" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Retour aux projets
+        </a>
+
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div>
+                <div class="logo" style="color:white; margin-bottom: 0.75rem;"><span class="logo-dot"></span>Romain DIEUNON</div>
+                <p style="color:#94a3b8; font-size: 0.9rem;">Alternant Bachelor Spécialiste Cybersécurité — À la recherche d'une alternance en cybersécurité défensive.</p>
+                <div class="socials">
+                    <a href="https://www.linkedin.com/in/romain-dieunon" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.063 2.063 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=romaindieunon26@gmail.com" target="_blank" rel="noopener" class="social-link" aria-label="Email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+                    <a href="tel:0603413020" class="social-link" aria-label="Téléphone"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
+                </div>
+            </div>
+            <div>
+                <h4>Navigation</h4>
+                <a href="index.html">Accueil</a>
+                <a href="profil.html">Profil</a>
+                <a href="projets.html">Projets</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div>
+                <h4>Mentions légales</h4>
+                <a href="mentions-legales.html">Mentions légales</a>
+                <a href="tel:0603413020">06 03 41 30 20</a>
+                <a href="https://mail.google.com/mail/?view=cm&fs=1&to=romaindieunon26@gmail.com" target="_blank" rel="noopener">romaindieunon26@gmail.com</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © <span id="year"></span> Romain Dieunon. Tous droits réservés.
+        </div>
+    </div>
+</footer>
+
+<!-- Lightbox zoomable (cible #proc-lightbox dans js/script.js) -->
+<div id="proc-lightbox" class="proc-lightbox" aria-hidden="true">
+    <button class="proc-lightbox-close" aria-label="Fermer">&times;</button>
+    <img id="proc-lightbox-img" src="" alt="">
+</div>
+
+<script src="js/script.js"></script>
+</body>
+</html>

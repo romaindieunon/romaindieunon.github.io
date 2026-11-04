@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procédure TrueNAS Scale — Romain Dieunon</title>
+    <meta name="description" content="Procédure d'installation et de configuration d'un serveur de stockage TrueNAS Scale : RAID ZFS, intégration AD, partages SMB et quotas.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Romain Dieunon">
+    <meta property="og:title" content="Procédure TrueNAS Scale — Romain Dieunon">
+    <meta property="og:description" content="Procédure d'installation et de configuration d'un serveur de stockage TrueNAS Scale : RAID ZFS, intégration AD, partages SMB et quotas.">
+    <meta property="og:url" content="https://romaindieunon.github.io/procedure-truenas.html">
+    <meta property="og:image" content="https://romaindieunon.github.io/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="fr_FR">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://romaindieunon.github.io/procedure-truenas.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='Inter,sans-serif' font-size='14' font-weight='700'%3ERD%3C/text%3E%3C/svg%3E">
+    <style>
+        .proj-toc { background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem 1.75rem; margin: 1.5rem 0 2rem; }
+        .proj-toc h4 { margin: 0 0 0.75rem; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+        .proj-toc ol { margin: 0; padding-left: 1.25rem; }
+        .proj-toc ol li { margin: 0.35rem 0; }
+        .proj-toc a { color: var(--primary); text-decoration: none; }
+        .proj-toc a:hover { text-decoration: underline; }
+        .proj-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .proj-meta-item { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem 1.25rem; }
+        .proj-meta-item span { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.25rem; }
+        .proj-meta-item strong { font-size: 1rem; color: var(--text); }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary); text-decoration: none; font-weight: 500; margin-top: 2rem; }
+        .back-link:hover { text-decoration: underline; }
+        .cmd-block { background: #0f172a; color: #e2e8f0; padding: 0.85rem 1.1rem; border-radius: 6px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9rem; margin: 0.4rem 0 0.85rem; overflow-x: auto; white-space: pre-wrap; }
+        .proc-img { display: block; margin: 1.25rem auto; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.10); image-rendering: auto; cursor: zoom-in; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .proc-img:hover { transform: scale(1.01); box-shadow: 0 8px 28px rgba(0,0,0,0.18); }
+        .proc-img-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin: 1.25rem 0; align-items: start; }
+        .proc-img-row img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.10); background: #fff; image-rendering: auto; cursor: zoom-in; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .proc-img-row img:hover { transform: scale(1.02); box-shadow: 0 8px 28px rgba(0,0,0,0.18); }
+        .img-caption { display: block; text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-top: 0.4rem; font-style: italic; }
+        /* Lightbox */
+        /* Lightbox géré par .proc-lightbox dans css/style.css et js/script.js */
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-wrap">
+        <a href="index.html" class="logo"><span class="logo-dot"></span>Romain DIEUNON</a>
+        <button class="nav-toggle" aria-label="Ouvrir le menu"><span></span><span></span><span></span></button>
+        <ul class="nav-links">
+            <li><a href="index.html">Accueil</a></li>
+            <li><a href="profil.html">Profil</a></li>
+            <li><a href="projets.html" class="active">Projets</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </div>
+</nav>
+
+<section class="page-hero">
+    <div class="container">
+        <p class="breadcrumb"><a href="index.html">Accueil</a> / <a href="projets.html">Projets</a> / TrueNAS Scale</p>
+        <h1>TrueNAS Scale — Serveur de stockage NAS</h1>
+        <p>Mise en place d'un serveur de stockage TrueNAS Scale (Community Edition) hébergé sur le serveur Kappa. Installation, configuration réseau, création d'un pool ZFS en RAIDZ, intégration au domaine Active Directory <code>BTSSIO.RD</code>, partages SMB pour Élèves et Formateurs, ACL via le modèle AGDLP et quotas par dataset.</p>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+
+        <div class="proj-meta fade-in">
+            <div class="proj-meta-item"><span>Solution</span><strong>TrueNAS Scale CE</strong></div>
+            <div class="proj-meta-item"><span>Système</span><strong>Linux + ZFS</strong></div>
+            <div class="proj-meta-item"><span>Serveur</span><strong>Kappa</strong></div>
+            <div class="proj-meta-item"><span>Adresse</span><strong>192.168.200.204</strong></div>
+            <div class="proj-meta-item"><span>RAID</span><strong>RAIDZ (équivalent RAID 5)</strong></div>
+            <div class="proj-meta-item"><span>Partages</span><strong>SMB + NFS</strong></div>
+            <div class="proj-meta-item"><span>Authentification</span><strong>Active Directory</strong></div>
+            <div class="proj-meta-item"><span>Domaine</span><strong>BTSSIO.RD</strong></div>
+        </div>
+
+        <div class="proj-toc fade-in">
+            <h4>Sommaire</h4>
+            <ol>
+                <li><a href="#contexte">Contexte et objectifs</a></li>
+                <li><a href="#prerequis">Prérequis</a></li>
+                <li><a href="#vm-proxmox">Étape 1 — Création de la VM Kappa dans Proxmox</a></li>
+                <li><a href="#installation">Étape 2 — Installation de TrueNAS Scale</a></li>
+                <li><a href="#reseau-console">Étape 3 — Configuration réseau depuis la console</a></li>
+                <li><a href="#premiere-connexion">Étape 4 — Première connexion à l'interface web</a></li>
+                <li><a href="#maj">Étape 5 — Mises à jour système</a></li>
+                <li><a href="#raid">Étape 6 — Création du pool ZFS (RAIDZ)</a></li>
+                <li><a href="#ad">Étape 7 — NTP et intégration au domaine Active Directory</a></li>
+                <li><a href="#datasets">Étape 8 — Datasets et activation des services</a></li>
+                <li><a href="#smb">Étape 9 — Partages SMB et permissions ACL</a></li>
+                <li><a href="#quotas">Étape 10 — Quotas par dataset</a></li>
+                <li><a href="#test">Étape 11 — Test depuis un poste client du domaine</a></li>
+                <li><a href="#bilan">Bilan et compétences mobilisées</a></li>
+            </ol>
+        </div>
+
+        <div id="contexte" class="content-block fade-in">
+            <h3>1. Contexte et objectifs</h3>
+            <p>
+                Pour compléter l'infrastructure du Projet BTS SIO, le parc avait besoin d'un
+                <strong>serveur de stockage centralisé</strong> permettant d'héberger les fichiers des utilisateurs
+                (Élèves et Formateurs) et de servir de point de partage commun (logiciels, modèles, etc.). J'ai choisi
+                <strong>TrueNAS Scale Community Edition</strong> pour sa robustesse, son intégration native avec
+                Active Directory et la fiabilité du système de fichiers <strong>ZFS</strong> (contrôle d'intégrité,
+                snapshots, RAID logiciel).
+            </p>
+            <p>Cinq objectifs étaient fixés :</p>
+            <ul>
+                <li>Installer TrueNAS Scale sur le serveur Kappa.</li>
+                <li>Configurer un pool ZFS en <strong>RAIDZ</strong> pour assurer la tolérance de panne.</li>
+                <li>Joindre TrueNAS au domaine <code>BTSSIO.RD</code> et réutiliser les comptes AD.</li>
+                <li>Créer des partages SMB avec ACL via le modèle <strong>AGDLP</strong>.</li>
+                <li>Mettre en place des <strong>quotas par dataset</strong> pour éviter la saturation de l'espace disque.</li>
+            </ul>
+        </div>
+
+        <div id="prerequis" class="content-block fade-in">
+            <h3>2. Prérequis</h3>
+            <ul>
+                <li>L'ISO TrueNAS Scale téléchargée depuis <a href="https://www.truenas.com/download-truenas-community-edition/" target="_blank" rel="noopener">truenas.com</a> et déposée dans le stockage <code>local</code> du nœud Proxmox.</li>
+                <li>Un nœud Proxmox (ici <code>Gamma</code>) avec suffisamment de disque pour héberger la VM Kappa et ses 4 disques virtuels.</li>
+                <li>L'Active Directory du Projet 1 opérationnel : domaine <code>BTSSIO.RD</code>, DNS interne fonctionnel.</li>
+                <li>Un compte du domaine ayant le droit de joindre une machine à AD.</li>
+                <li>Les groupes AD préparés selon le modèle <strong>AGDLP</strong> (GDL_Eleves_EL, GDL_Eleves_LS, GDL_Formateurs_EL, GDL_Formateurs_LS).</li>
+            </ul>
+        </div>
+
+        <div id="vm-proxmox" class="content-block fade-in">
+            <h3>3. Étape 1 — Création de la VM Kappa dans Proxmox</h3>
+            <p>
+                Avant l'installation de TrueNAS, je crée la VM <strong>Kappa</strong> sur le nœud Proxmox
+                <code>Gamma</code> via <em>Créer : Machine virtuelle</em>. Je passe par chaque onglet de
+                l'assistant en choisissant des paramètres adaptés à un NAS.
+            </p>
+
+            <p><strong>Onglet Général</strong> — Nœud <code>Gamma</code>, VM ID <code>100</code>, Nom <code>Kappa</code>, démarrage à l'amorçage activé :</p>
+            <img src="assets/projets/truenas/image233.png" alt="Onglet Général" class="proc-img" style="max-width:700px;">
+
+            <p><strong>Onglet Système d'exploitation</strong> — Image ISO <code>TrueNAS-SCALE-25.04.2.3</code>, type Linux, version <code>6.x - 2.6 Kernel</code> :</p>
+            <img src="assets/projets/truenas/image234.png" alt="Onglet Système d'exploitation" class="proc-img" style="max-width:700px;">
+
+            <p><strong>Onglet Système</strong> — Contrôleur SCSI <strong>VirtIO SCSI single</strong>, BIOS <code>SeaBIOS</code> (laissés par défaut) :</p>
+            <img src="assets/projets/truenas/image235.png" alt="Onglet Système" class="proc-img" style="max-width:700px;">
+
+            <p>
+                <strong>Onglet Disques</strong> — J'ajoute <strong>4 disques virtuels</strong> :
+                <code>scsi0</code> de 20 Go pour le système TrueNAS, et trois disques <code>scsi1</code>,
+                <code>scsi2</code>, <code>scsi3</code> de 10 Go chacun pour le futur pool ZFS en RAIDZ
+                (équivalent RAID 5 : tolère la perte d'un disque). Stockage <code>Backup</code>, IO thread activé :
+            </p>
+            <img src="assets/projets/truenas/image236.png" alt="Onglet Disques (4 disques pour le RAIDZ)" class="proc-img" style="max-width:700px;">
+
+            <p><strong>Onglet Processeur</strong> — 2 sockets × 2 cœurs = <strong>4 vCPU</strong>, type <code>x86-64-v2-AES</code> :</p>
+            <img src="assets/projets/truenas/image237.png" alt="Onglet Processeur" class="proc-img" style="max-width:700px;">
+
+            <p><strong>Onglet Mémoire</strong> — <strong>2048 MiB</strong> (2 Go) :</p>
+            <img src="assets/projets/truenas/image238.png" alt="Onglet Mémoire" class="proc-img" style="max-width:700px;">
+
+            <p><strong>Onglet Réseau</strong> — Pont <code>vmbr0</code>, modèle <strong>VirtIO (paravirtualisé)</strong>, pare-feu activé :</p>
+            <img src="assets/projets/truenas/image239.png" alt="Onglet Réseau" class="proc-img" style="max-width:700px;">
+
+            <p><strong>Onglet Confirmation</strong> — Récapitulatif complet, je décoche <em>Démarrer après création</em> et je clique sur <strong>Terminer</strong> :</p>
+            <img src="assets/projets/truenas/image240.png" alt="Onglet Confirmation - récapitulatif VM" class="proc-img" style="max-width:700px;">
+        </div>
+
+        <div id="installation" class="content-block fade-in">
+            <h3>4. Étape 2 — Installation de TrueNAS Scale</h3>
+            <p>
+                Je démarre la VM Kappa. Elle boote sur l'ISO TrueNAS Scale via GRUB :
+            </p>
+            <img src="assets/projets/truenas/image241.png" alt="GRUB - Start TrueNAS SCALE Installation" class="proc-img" style="max-width:700px;">
+
+            <p>L'installateur s'ouvre sur le <em>TrueNAS Console Setup</em>. Je choisis l'option <strong>1. Install/Upgrade</strong> :</p>
+            <img src="assets/projets/truenas/image242.png" alt="Console Setup - Install/Upgrade" class="proc-img" style="max-width:700px;">
+
+            <p>Je sélectionne ensuite le disque système <code>sda</code> (20 Go) — les trois autres disques restent disponibles pour le pool ZFS :</p>
+            <img src="assets/projets/truenas/image243.png" alt="Choose Destination Media - sda" class="proc-img" style="max-width:700px;">
+
+            <p>Je confirme l'effacement du disque (l'installateur prévient que toutes les partitions de <code>sda</code> vont être effacées) :</p>
+            <img src="assets/projets/truenas/image244.png" alt="Confirmation de l'effacement de sda" class="proc-img" style="max-width:700px;">
+
+            <p>Je choisis ensuite la méthode d'authentification web : <strong>Administrative user (truenas_admin)</strong> et je définis le mot de passe admin :</p>
+            <img src="assets/projets/truenas/image245.png" alt="Web UI Authentication Method - truenas_admin" class="proc-img" style="max-width:700px;">
+
+            <p>Pour la question du démarrage, je choisis <strong>Yes</strong> (EFI) :</p>
+            <img src="assets/projets/truenas/image246.png" alt="Legacy Boot - EFI" class="proc-img" style="max-width:700px;">
+
+            <p>L'installation se déroule, puis le message <strong>Installation Succeeded</strong> apparaît :</p>
+            <img src="assets/projets/truenas/image247.png" alt="Installation Succeeded" class="proc-img" style="max-width:700px;">
+        </div>
+
+        <div id="reseau-console" class="content-block fade-in">
+            <h3>5. Étape 3 — Configuration réseau depuis la console</h3>
+            <p>
+                Je retire l'ISO du lecteur virtuel puis je redémarre la VM depuis le menu Console Setup
+                (<strong>3. Reboot System</strong>) :
+            </p>
+            <img src="assets/projets/truenas/image248.png" alt="Console Setup - Reboot System" class="proc-img" style="max-width:700px;">
+
+            <p>
+                Au redémarrage, la console TrueNAS affiche un menu de configuration. Je choisis
+                <strong>1. Configure network interfaces</strong> puis je sélectionne l'interface
+                <code>ens18</code> qui n'a pas encore d'adresse :
+            </p>
+            <img src="assets/projets/truenas/image249.png" alt="Network Interfaces - ens18 sans IP" class="proc-img" style="max-width:700px;">
+
+            <p>
+                Je désactive le DHCP IPv4 et IPv6 puis je définis un alias statique
+                <code>192.168.200.204/24</code> conforme au plan d'adressage du VLAN serveurs :
+            </p>
+            <img src="assets/projets/truenas/image250.png" alt="Update Network Interface - alias 192.168.200.204/24" class="proc-img" style="max-width:700px;">
+
+            <p>Validation de la saisie de l'alias IP :</p>
+            <img src="assets/projets/truenas/image251.png" alt="Alias IP validé" class="proc-img" style="max-width:700px;">
+
+            <p>De retour sur la liste des interfaces, je vois <em>« You have pending network interface changes. Press &lt;a&gt; to apply them »</em>. J'appuie sur <kbd>a</kbd> pour appliquer :</p>
+            <img src="assets/projets/truenas/image252.png" alt="Pending changes" class="proc-img" style="max-width:700px;">
+
+            <p>La console affiche enfin l'URL d'accès à l'interface web :</p>
+            <div class="cmd-block">https://192.168.200.204</div>
+            <img src="assets/projets/truenas/image253.png" alt="Console setup avec URL web" class="proc-img" style="max-width:500px;">
+        </div>
+
+        <div id="premiere-connexion" class="content-block fade-in">
+            <h3>6. Étape 4 — Première connexion à l'interface web</h3>
+            <p>
+                Depuis un poste client du VLAN serveurs, j'ouvre <code>https://192.168.200.204</code> et je me
+                connecte avec le compte <code>truenas_admin</code> et le mot de passe défini à l'installation :
+            </p>
+            <img src="assets/projets/truenas/image254.png" alt="Page de connexion TrueNAS" class="proc-img" style="max-width:600px;">
+
+            <p>J'arrive sur le tableau de bord principal :</p>
+            <img src="assets/projets/truenas/image255.png" alt="Interface web TrueNAS" class="proc-img">
+
+            <p>
+                Je n'avais pas configuré la <strong>passerelle</strong> ni les <strong>serveurs DNS</strong> à
+                l'installation. Je le fais maintenant via <em>Réseau → Configuration globale</em> en pointant le DNS
+                interne du contrôleur AD (Beta) :
+            </p>
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/truenas/image256.png" alt="Réseau global">
+                    <span class="img-caption">Réseau → Configuration globale</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image257.png" alt="DNS et gateway">
+                    <span class="img-caption">DNS / Gateway</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image258.png" alt="Configuration enregistrée">
+                    <span class="img-caption">Sauvegarde</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="maj" class="content-block fade-in">
+            <h3>7. Étape 5 — Mises à jour système</h3>
+            <p>
+                Avant toute configuration sensible, je lance les mises à jour via <em>Système → Mettre à jour</em>.
+                Cela évite les bugs (notamment au moment de configurer les ACL ou la jonction AD).
+            </p>
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/truenas/image259.png" alt="Vérification des mises à jour">
+                    <span class="img-caption">Vérification des mises à jour</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image260.png" alt="Installation des mises à jour">
+                    <span class="img-caption">Installation</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="raid" class="content-block fade-in">
+            <h3>8. Étape 6 — Création du pool ZFS (RAIDZ)</h3>
+            <p>
+                Le modèle <strong>AGDLP</strong> sera appliqué pour les permissions (groupes globaux dans des
+                groupes de domaine local, ces derniers recevant les droits sur les ressources) :
+            </p>
+            <img src="assets/projets/truenas/image261.png" alt="Schéma AGDLP" class="proc-img" style="max-width:700px;">
+
+            <p>
+                Je crée le pool ZFS depuis <em>Stockage → Créer un pool</em>. Je choisis le mode
+                <strong>RAIDZ</strong> (équivalent du RAID 5 : tolérance d'un disque en panne, espace utile
+                = (n-1) × taille du plus petit disque).
+            </p>
+            <img src="assets/projets/truenas/image262.png" alt="Storage / Create Pool" class="proc-img" style="max-width:700px;">
+
+            <p>Nom du pool, sélection du type de RAID puis des disques :</p>
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/truenas/image263.png" alt="Nom du pool">
+                    <span class="img-caption">Nom du pool</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image264.png" alt="Sélection RAIDZ">
+                    <span class="img-caption">Choix du RAID (RAIDZ)</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image265.png" alt="Sélection des disques">
+                    <span class="img-caption">Disques du vdev</span>
+                </div>
+            </div>
+
+            <p>Validation finale du pool :</p>
+            <img src="assets/projets/truenas/image266.png" alt="Création du pool" class="proc-img" style="max-width:700px;">
+        </div>
+
+        <div id="ad" class="content-block fade-in">
+            <h3>9. Étape 7 — NTP et intégration au domaine Active Directory</h3>
+            <p>
+                Avant de joindre TrueNAS au domaine, il faut que les horloges soient synchronisées avec le
+                contrôleur AD (Kerberos est très strict sur l'écart d'heure). Je vais dans
+                <em>Système → Paramètres généraux → NTP Servers</em> et j'ajoute les deux contrôleurs Beta et
+                Delta comme serveurs NTP :
+            </p>
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/truenas/image267.png" alt="Ajout du premier serveur NTP">
+                    <span class="img-caption">NTP — Serveur AD primaire</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image268.png" alt="Ajout du second serveur NTP">
+                    <span class="img-caption">NTP — Serveur AD secondaire</span>
+                </div>
+            </div>
+
+            <p>
+                Je passe ensuite à la jonction Active Directory dans
+                <em>Identifiants (Credentials) → Annuaire des services (Directory Services)</em> et je clique sur
+                <strong>Configure Active Directory</strong> :
+            </p>
+            <img src="assets/projets/truenas/image269.png" alt="Configure Active Directory" class="proc-img" style="max-width:700px;">
+
+            <p>
+                Je renseigne le nom de domaine <code>BTSSIO.RD</code>, le compte administrateur du domaine et son
+                mot de passe. Dans les <em>options avancées</em>, je décoche <strong>Allow DNS updates</strong>
+                si la mise à jour DNS ne passe pas, puis je sauvegarde :
+            </p>
+            <img src="assets/projets/truenas/image270.png" alt="Renseignement du domaine AD" class="proc-img" style="max-width:700px;">
+        </div>
+
+        <div id="datasets" class="content-block fade-in">
+            <h3>10. Étape 8 — Datasets et activation des services</h3>
+            <p>
+                Je crée les <strong>datasets</strong> dans le pool : un par partage. Dans <em>Datasets → Ajouter
+                dataset</em>, je crée <code>partage_eleves</code> puis <code>partage_formateurs</code>.
+            </p>
+            <img src="assets/projets/truenas/image271.png" alt="Ajout d'un dataset" class="proc-img" style="max-width:700px;">
+
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/truenas/image272.png" alt="Dataset partage_eleves">
+                    <span class="img-caption">Dataset partage_eleves</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image273.png" alt="Dataset partage_formateurs">
+                    <span class="img-caption">Dataset partage_formateurs</span>
+                </div>
+            </div>
+
+            <p>
+                J'active ensuite les services nécessaires dans <em>Système → Services</em> : <strong>SMB</strong>
+                pour les clients Windows et <strong>NFS</strong> pour les clients Linux.
+            </p>
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/truenas/image274.png" alt="Activation NFS">
+                    <span class="img-caption">Activation du service NFS</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image275.png" alt="Activation SMB">
+                    <span class="img-caption">Activation du service SMB</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="smb" class="content-block fade-in">
+            <h3>11. Étape 9 — Partages SMB et permissions ACL</h3>
+            <p>
+                Je crée le partage SMB dans <em>Partages → Partages Windows (SMB) → Ajouter</em>, en sélectionnant
+                le dataset créé à l'étape précédente :
+            </p>
+            <img src="assets/projets/truenas/image276.png" alt="Création du partage SMB" class="proc-img" style="max-width:700px;">
+
+            <p>Sauvegarde, redémarrage du service SMB, puis ouverture de l'éditeur d'ACL :</p>
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/truenas/image277.png" alt="Save & Restart">
+                    <span class="img-caption">Save / Restart Services</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image278.png" alt="Configure ACL">
+                    <span class="img-caption">Configure ACL</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image279.png" alt="Éditeur ACL">
+                    <span class="img-caption">Éditeur d'ACL</span>
+                </div>
+            </div>
+
+            <p>
+                Pour le dataset <code>partage_eleves</code>, j'applique les droits via les groupes de domaine
+                local du domaine AD (modèle AGDLP) : <strong>GDL_Eleves_EL</strong> en écriture et
+                <strong>GDL_Formateurs_EL</strong> en écriture également (les formateurs peuvent tout faire sur
+                le partage Élèves).
+            </p>
+            <img src="assets/projets/truenas/image280.png" alt="ACL appliquées au partage Élèves" class="proc-img" style="max-width:700px;">
+
+            <p>
+                Je refais la même opération pour <code>partage_formateurs</code>, mais cette fois en mettant
+                <strong>GDL_Formateurs_EL</strong> en écriture et <strong>GDL_Eleves_LS</strong> en lecture seule :
+            </p>
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/truenas/image281.png" alt="Partage Formateurs">
+                    <span class="img-caption">Création du partage Formateurs</span>
+                </div>
+                <div>
+                    <img src="assets/projets/truenas/image282.png" alt="ACL Formateurs">
+                    <span class="img-caption">ACL appliquées au partage Formateurs</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="quotas" class="content-block fade-in">
+            <h3>12. Étape 10 — Quotas par dataset</h3>
+            <p>
+                Un <strong>quota</strong> est une limite d'espace disque attribuée à un utilisateur, un groupe ou
+                un dataset. Si l'on fixe 10 Go à un dataset, l'utilisateur ne pourra plus écrire au-delà de
+                10 Go, même si le pool a encore de la place.
+            </p>
+            <p>
+                Je vais dans <em>Datasets → partage_eleves → Edit</em>, section <strong>Dataset Space
+                Management</strong> :
+            </p>
+            <img src="assets/projets/truenas/image283.png" alt="Edit Dataset Space Management" class="proc-img" style="max-width:700px;">
+
+            <p>Je renseigne la limite voulue (selon le stockage disponible) puis je sauvegarde :</p>
+            <img src="assets/projets/truenas/image284.png" alt="Configuration des quotas" class="proc-img" style="max-width:700px;">
+
+            <p>
+                On peut aussi ajouter des quotas <strong>par utilisateur</strong> ou <strong>par groupe</strong>,
+                mais ici je n'ai mis qu'un quota par dataset, ce qui était suffisant pour le projet.
+            </p>
+        </div>
+
+        <div id="test" class="content-block fade-in">
+            <h3>13. Étape 11 — Test depuis un poste client du domaine</h3>
+            <p>
+                Pour valider l'ensemble, je prends un poste Windows 11 du domaine, je me connecte avec un compte
+                <em>Élève</em>, puis dans l'Explorateur de fichiers je tape :
+            </p>
+            <div class="cmd-block">\\192.168.200.204</div>
+            <p>
+                J'arrive sur les dossiers <code>partage_eleves</code> et <code>partage_formateurs</code> — ainsi
+                qu'un dossier <code>logiciel</code> que j'ai ajouté dans TrueNAS pour stocker les paquets
+                d'installation utilisés par les GPO (OneNote, agent GLPI…) :
+            </p>
+            <img src="assets/projets/truenas/image285.png" alt="Test depuis Windows" class="proc-img">
+
+            <p>
+                La connexion utilise automatiquement le ticket Kerberos de la session AD — aucun mot de passe
+                n'est redemandé (<em>single sign-on</em>). Le compte Élève ne peut écrire que dans
+                <code>partage_eleves</code> et reste en lecture seule sur <code>partage_formateurs</code>, ce qui
+                valide la chaîne complète AD → AGDLP → ACL TrueNAS.
+            </p>
+        </div>
+
+        <div id="bilan" class="content-block fade-in">
+            <h3>14. Bilan et compétences mobilisées</h3>
+            <p>
+                Cette procédure prolonge directement le Projet 1 (Active Directory) en exposant les comptes et
+                groupes AD à un service de fichiers réel. Elle m'a permis de mobiliser plusieurs compétences SISR
+                à la fois côté stockage, côté annuaire et côté partage réseau.
+            </p>
+            <ul>
+                <li><strong>Mettre en service un serveur de stockage</strong> : installation TrueNAS, pool ZFS, datasets.</li>
+                <li><strong>Assurer la tolérance de panne</strong> : configuration d'un RAIDZ logiciel.</li>
+                <li><strong>Intégrer un service à un annuaire</strong> : synchronisation NTP, jonction au domaine AD, ré-utilisation des comptes existants.</li>
+                <li><strong>Configurer un partage réseau Windows</strong> : SMB, ACL via AGDLP, single sign-on Kerberos.</li>
+                <li><strong>Limiter l'usage des ressources</strong> : quotas par dataset (extensibles par utilisateur ou groupe).</li>
+                <li><strong>Documenter et tester</strong> : validation côté client avec un compte du domaine.</li>
+            </ul>
+        </div>
+
+        <a href="projets.html" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Retour aux projets
+        </a>
+
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div>
+                <div class="logo" style="color:white; margin-bottom: 0.75rem;"><span class="logo-dot"></span>Romain DIEUNON</div>
+                <p style="color:#94a3b8; font-size: 0.9rem;">Alternant Bachelor Spécialiste Cybersécurité — À la recherche d'une alternance en cybersécurité défensive.</p>
+                <div class="socials">
+                    <a href="https://www.linkedin.com/in/romain-dieunon" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.063 2.063 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=romaindieunon26@gmail.com" target="_blank" rel="noopener" class="social-link" aria-label="Email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+                    <a href="tel:0603413020" class="social-link" aria-label="Téléphone"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
+                </div>
+            </div>
+            <div>
+                <h4>Navigation</h4>
+                <a href="index.html">Accueil</a>
+                <a href="profil.html">Profil</a>
+                <a href="projets.html">Projets</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div>
+                <h4>Mentions légales</h4>
+                <a href="mentions-legales.html">Mentions légales</a>
+                <a href="tel:0603413020">06 03 41 30 20</a>
+                <a href="https://mail.google.com/mail/?view=cm&fs=1&to=romaindieunon26@gmail.com" target="_blank" rel="noopener">romaindieunon26@gmail.com</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © <span id="year"></span> Romain Dieunon. Tous droits réservés.
+        </div>
+    </div>
+</footer>
+
+<!-- Lightbox zoomable (cible #proc-lightbox dans js/script.js) -->
+<div id="proc-lightbox" class="proc-lightbox" aria-hidden="true">
+    <button class="proc-lightbox-close" aria-label="Fermer">&times;</button>
+    <img id="proc-lightbox-img" src="" alt="">
+</div>
+
+<script src="js/script.js"></script>
+</body>
+</html>

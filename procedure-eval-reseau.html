@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procédure Évaluation Réseau — Romain Dieunon</title>
+    <meta name="description" content="Procédure d'évaluation réseau BTS SIO SISR : déploiement complet AD DS, DNS, DHCP, PFsense et GPO sur un lab Windows Server.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Romain Dieunon">
+    <meta property="og:title" content="Procédure Évaluation Réseau — Romain Dieunon">
+    <meta property="og:description" content="Procédure d'évaluation réseau BTS SIO SISR : déploiement complet AD DS, DNS, DHCP, PFsense et GPO sur un lab Windows Server.">
+    <meta property="og:url" content="https://romaindieunon.github.io/procedure-eval-reseau.html">
+    <meta property="og:image" content="https://romaindieunon.github.io/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="fr_FR">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://romaindieunon.github.io/procedure-eval-reseau.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='Inter,sans-serif' font-size='14' font-weight='700'%3ERD%3C/text%3E%3C/svg%3E">
+    <style>
+        .proj-toc { background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem 1.75rem; margin: 1.5rem 0 2rem; }
+        .proj-toc h4 { margin: 0 0 0.75rem; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+        .proj-toc ol { margin: 0; padding-left: 1.25rem; }
+        .proj-toc ol li { margin: 0.35rem 0; }
+        .proj-toc a { color: var(--primary); text-decoration: none; }
+        .proj-toc a:hover { text-decoration: underline; }
+        .proj-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .proj-meta-item { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem 1.25rem; }
+        .proj-meta-item span { display: block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 0.25rem; }
+        .proj-meta-item strong { font-size: 1rem; color: var(--text); }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary); text-decoration: none; font-weight: 500; margin-top: 2rem; }
+        .back-link:hover { text-decoration: underline; }
+        .cmd-block { background: #0f172a; color: #e2e8f0; padding: 0.85rem 1.1rem; border-radius: 6px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.9rem; margin: 0.4rem 0 0.85rem; overflow-x: auto; white-space: pre-wrap; }
+        .proc-img { display: block; margin: 1.25rem auto; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.10); cursor: zoom-in; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .proc-img:hover { transform: scale(1.01); box-shadow: 0 8px 28px rgba(0,0,0,0.18); }
+        /* Grille agrandie : moins de colonnes mais des images plus grandes => downscale beaucoup moins agressif */
+        .proc-img-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.25rem; margin: 1.25rem 0; align-items: start; }
+        .proc-img-row img { width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.10); background: #fff; cursor: zoom-in; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .proc-img-row img:hover { transform: scale(1.02); box-shadow: 0 8px 28px rgba(0,0,0,0.18); }
+        /* Sur mobile, une seule colonne pour ne plus dégrader la qualité */
+        @media (max-width: 720px) { .proc-img-row { grid-template-columns: 1fr; } }
+        .img-caption { display: block; text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-top: 0.4rem; font-style: italic; }
+        /* Lightbox */
+        /* Lightbox géré par .proc-lightbox dans css/style.css et js/script.js */
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-wrap">
+        <a href="index.html" class="logo"><span class="logo-dot"></span>Romain DIEUNON</a>
+        <button class="nav-toggle" aria-label="Ouvrir le menu"><span></span><span></span><span></span></button>
+        <ul class="nav-links">
+            <li><a href="index.html">Accueil</a></li>
+            <li><a href="profil.html">Profil</a></li>
+            <li><a href="projets.html" class="active">Projets</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </div>
+</nav>
+
+<section class="page-hero">
+    <div class="container">
+        <p class="breadcrumb"><a href="index.html">Accueil</a> / <a href="projets.html">Projets</a> / Évaluation Réseau</p>
+        <h1>Évaluation Réseau — Lab AD DS, DNS, DHCP & PFsense</h1>
+        <p>Évaluation pratique réalisée en 2<sup>ème</sup> année de BTS SIO SISR : déploiement complet d'une infrastructure Windows Server avec contrôleurs de domaine redondants, services réseau (DHCP / DNS), pare-feu PFsense et stratégies de groupe (GPO).</p>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+
+        <div class="proj-meta fade-in">
+            <div class="proj-meta-item"><span>Type</span><strong>Évaluation pratique</strong></div>
+            <div class="proj-meta-item"><span>Domaine</span><strong>romain.eval</strong></div>
+            <div class="proj-meta-item"><span>OS serveur</span><strong>Windows Server</strong></div>
+            <div class="proj-meta-item"><span>OS client</span><strong>Windows 11</strong></div>
+            <div class="proj-meta-item"><span>Pare-feu</span><strong>PFsense</strong></div>
+            <div class="proj-meta-item"><span>Virtualisation</span><strong>VMware Workstation</strong></div>
+            <div class="proj-meta-item"><span>Serveurs</span><strong>Lamar (DC1) / Paige (DC2)</strong></div>
+            <div class="proj-meta-item"><span>Clients</span><strong>Michael / Franklin</strong></div>
+        </div>
+
+        <div class="proj-toc fade-in">
+            <h4>Sommaire</h4>
+            <ol>
+                <li><a href="#contexte">Contexte et objectifs</a></li>
+                <li><a href="#preparation">Préparation des machines</a></li>
+                <li><a href="#pfsense">Configuration du pare-feu PFsense</a></li>
+                <li><a href="#roles">Installation des rôles AD DS / DNS / DHCP</a></li>
+                <li><a href="#dhcp">Configuration du DHCP</a></li>
+                <li><a href="#dns">Configuration du DNS (zone inverse + redirecteurs)</a></li>
+                <li><a href="#dc2">Promotion du contrôleur secondaire (Paige / DC2)</a></li>
+                <li><a href="#basculement">Basculement DHCP entre DC1 et DC2</a></li>
+                <li><a href="#gpo">Stratégies de groupe (GPO)</a></li>
+                <li><a href="#bginfo">Déploiement de BGInfo par GPO</a></li>
+                <li><a href="#bilan">Bilan et compétences mobilisées</a></li>
+            </ol>
+        </div>
+
+        <div id="contexte" class="content-block fade-in">
+            <h3>1. Contexte et objectifs</h3>
+            <p>
+                Cette évaluation pratique de fin de 2<sup>ème</sup> année de BTS SIO SISR vise à mettre en place une
+                <strong>infrastructure réseau d'entreprise complète</strong> reposant sur deux contrôleurs de domaine
+                Windows Server, un pare-feu PFsense et deux postes clients Windows 11. Le thème reprend l'univers GTA V
+                (Michael, Franklin, Lamar, Trevor → Paige) pour nommer les machines.
+            </p>
+            <p>Les objectifs imposés par le sujet :</p>
+            <ul>
+                <li>Créer une <strong>forêt Active Directory</strong> (<code>romain.eval</code>) avec un contrôleur principal Lamar et un contrôleur secondaire Paige.</li>
+                <li>Configurer un <strong>service DHCP</strong> avec étendue, réservation et basculement entre les deux DC.</li>
+                <li>Configurer le <strong>DNS</strong> (zone de recherche inversée, redirecteurs publics).</li>
+                <li>Mettre en place un <strong>pare-feu PFsense</strong> avec HTTPS et certificat.</li>
+                <li>Déployer plusieurs <strong>GPO</strong> : horaires de connexion, raccourci, désactivation de l'invite de commandes, déploiement de BGInfo.</li>
+            </ul>
+        </div>
+
+        <div id="preparation" class="content-block fade-in">
+            <h3>2. Préparation des machines</h3>
+            <p>Voici le plan du lab à mettre en place :</p>
+            <img src="assets/projets/eval-reseau/image002.png" alt="Plan du lab réseau" class="proc-img" style="max-width:600px;">
+
+            <p>
+                Toutes les VMs sont créées sous VMware. Sur chacune, j'applique les
+                <strong>bonnes pratiques</strong> de mise en service : mises à jour Windows, activation du pavé
+                numérique au démarrage, et installation des VMware Tools.
+            </p>
+
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/eval-reseau/image004.png" alt="Mises à jour Windows">
+                    <span class="img-caption">Mises à jour Windows</span>
+                </div>
+                <div>
+                    <img src="assets/projets/eval-reseau/image006.png" alt="Activation du pavé numérique">
+                    <span class="img-caption">Activation du pavé numérique</span>
+                </div>
+            </div>
+
+            <p>Renommage des postes clients :</p>
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/eval-reseau/image008.png" alt="Renommage Michael">
+                    <span class="img-caption">Michael</span>
+                </div>
+                <div>
+                    <img src="assets/projets/eval-reseau/image010.png" alt="Renommage Franklin">
+                    <span class="img-caption">Franklin</span>
+                </div>
+            </div>
+
+            <p>Attribution d'adresses IP statiques aux serveurs et renommage :</p>
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/eval-reseau/image012.png" alt="IP statique Lamar">
+                    <span class="img-caption">Lamar (DC1)</span>
+                </div>
+                <div>
+                    <img src="assets/projets/eval-reseau/image014.png" alt="IP statique Paige">
+                    <span class="img-caption">Paige (DC2)</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="pfsense" class="content-block fade-in">
+            <h3>3. Configuration du pare-feu PFsense</h3>
+            <p>
+                Installation et premier accès à l'interface web de PFsense. Je vérifie ensuite les mises à jour
+                disponibles puis je commence le paramétrage.
+            </p>
+
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image016.png" alt="PFsense console">
+                <img src="assets/projets/eval-reseau/image018.png" alt="PFsense console 2">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image020.png" alt="PFsense">
+                <img src="assets/projets/eval-reseau/image022.png" alt="PFsense">
+                <img src="assets/projets/eval-reseau/image024.png" alt="PFsense">
+            </div>
+
+            <p>Vérification des mises à jour (« Check for updates ») :</p>
+            <img src="assets/projets/eval-reseau/image026.png" alt="Check for updates" class="proc-img" style="max-width:500px;">
+
+            <p>
+                Je crée ensuite un <strong>certificat</strong> pour pouvoir utiliser HTTPS sur l'interface
+                d'administration. Pour cela, je vais dans <em>Système → Certificats</em> puis je clique sur
+                <em>Ajouter</em> :
+            </p>
+            <img src="assets/projets/eval-reseau/image028.png" alt="Création certificat" class="proc-img" style="max-width:500px;">
+
+            <p>Ensuite, dans <em>Certificates</em>, je clique sur <em>Add/Sign</em> :</p>
+            <img src="assets/projets/eval-reseau/image030.png" alt="Add Sign certificate" class="proc-img" style="max-width:500px;">
+
+            <p>
+                Je sélectionne ensuite <strong>HTTPS</strong> et le certificat fraîchement créé, puis je clique sur
+                <em>Enregistrer</em> :
+            </p>
+            <img src="assets/projets/eval-reseau/image032.png" alt="HTTPS activé" class="proc-img" style="max-width:500px;">
+
+            <p>
+                Dans <em>Interfaces → Assignements</em>, je clique sur <em>LAN</em> et je change simplement le nom
+                pour le TP :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image034.png" alt="Configuration LAN">
+                <img src="assets/projets/eval-reseau/image036.png" alt="LAN renommé">
+            </div>
+
+            <p>
+                <strong>Rappel important :</strong> ne pas oublier de sauvegarder la configuration. Pour cela,
+                <em>Diagnostics → Sauvegarde et restauration</em> puis <em>Télécharger</em> : un fichier .xml est
+                produit, à conserver en cas de problème.
+            </p>
+        </div>
+
+        <div id="roles" class="content-block fade-in">
+            <h3>4. Installation des rôles AD DS / DNS / DHCP</h3>
+            <p>Ces étapes sont à réaliser sur les <strong>deux serveurs</strong> (Lamar et Paige).</p>
+            <p>
+                Dans le Gestionnaire de serveur : <em>Gérer → Ajouter des rôles et des fonctionnalités</em>, puis je
+                sélectionne les rôles <strong>AD DS</strong>, <strong>DNS</strong> et <strong>DHCP</strong> :
+            </p>
+            <img src="assets/projets/eval-reseau/image038.png" alt="Ajout des rôles AD DS DNS DHCP" class="proc-img" style="max-width:550px;">
+
+            <p>
+                Une fois installé, je promouvois le serveur en <strong>contrôleur de domaine</strong> via le drapeau
+                de notifications :
+            </p>
+            <img src="assets/projets/eval-reseau/image040.png" alt="Promouvoir contrôleur de domaine" class="proc-img" style="max-width:550px;">
+
+            <p>
+                Comme il s'agit d'une nouvelle installation, je choisis <em>Ajouter une nouvelle forêt</em> et je
+                renseigne le nom de domaine racine <code>romain.eval</code> :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image042.png" alt="Nouvelle forêt">
+                <img src="assets/projets/eval-reseau/image044.png" alt="Options DC">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image046.png" alt="DNS options">
+                <img src="assets/projets/eval-reseau/image048.png" alt="NetBIOS">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image050.png" alt="Chemins AD">
+                <img src="assets/projets/eval-reseau/image052.png" alt="Récapitulatif">
+            </div>
+
+            <p>Après installation et redémarrage, je me connecte au domaine :</p>
+            <img src="assets/projets/eval-reseau/image054.png" alt="Connexion au domaine" class="proc-img" style="max-width:500px;">
+        </div>
+
+        <div id="dhcp" class="content-block fade-in">
+            <h3>5. Configuration du DHCP</h3>
+            <p>
+                J'attribue toute la plage d'adresses IP du réseau choisi. D'abord, je termine la configuration DHCP
+                via le drapeau de notifications :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image056.png" alt="Terminer la config DHCP">
+                <img src="assets/projets/eval-reseau/image058.png" alt="Autorisation DHCP">
+            </div>
+
+            <p>Création d'une <strong>étendue</strong> :</p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image060.png" alt="Nouvelle étendue">
+                <img src="assets/projets/eval-reseau/image062.png" alt="Nom étendue">
+                <img src="assets/projets/eval-reseau/image064.png" alt="Plage IP">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image066.png" alt="Exclusions">
+                <img src="assets/projets/eval-reseau/image068.png" alt="Bail">
+                <img src="assets/projets/eval-reseau/image070.png" alt="Options DHCP">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image072.png" alt="Passerelle">
+                <img src="assets/projets/eval-reseau/image074.png" alt="DNS étendue">
+                <img src="assets/projets/eval-reseau/image076.png" alt="Activation">
+            </div>
+
+            <p>Création d'une <strong>réservation</strong> pour le PC Franklin :</p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image077.png" alt="Réservation Franklin">
+                <img src="assets/projets/eval-reseau/image078.png" alt="Détails réservation">
+                <img src="assets/projets/eval-reseau/image080.png" alt="Réservation validée">
+            </div>
+
+            <p>
+                J'<strong>intègre maintenant le serveur DHCP à l'AD</strong> : clic droit sur le serveur dans la
+                console DHCP, puis <em>Action → Autoriser</em> :
+            </p>
+            <img src="assets/projets/eval-reseau/image082.png" alt="Autoriser serveur DHCP dans AD" class="proc-img" style="max-width:500px;">
+
+            <p>Après actualisation :</p>
+            <img src="assets/projets/eval-reseau/image084.png" alt="DHCP autorisé" class="proc-img" style="max-width:500px;">
+
+            <p>Vérification : les deux PC clients ont bien reçu leur adresse IP du DHCP :</p>
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/eval-reseau/image086.png" alt="IP Franklin">
+                    <span class="img-caption">Franklin</span>
+                </div>
+                <div>
+                    <img src="assets/projets/eval-reseau/image088.png" alt="IP Michael">
+                    <span class="img-caption">Michael</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="dns" class="content-block fade-in">
+            <h3>6. Configuration du DNS (zone inverse + redirecteurs)</h3>
+            <p>
+                Je crée la <strong>zone de recherche inversée</strong> (qui n'est pas créée automatiquement) dans
+                la console DNS :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image090.png" alt="Console DNS">
+                <img src="assets/projets/eval-reseau/image092.png" alt="Nouvelle zone inversée">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image094.png" alt="Type de zone">
+                <img src="assets/projets/eval-reseau/image096.png" alt="Réplication">
+                <img src="assets/projets/eval-reseau/image098.png" alt="Adresse réseau">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image100.png" alt="Plage zone inverse">
+                <img src="assets/projets/eval-reseau/image102.png" alt="Mises à jour dynamiques">
+                <img src="assets/projets/eval-reseau/image104.png" alt="Récapitulatif zone">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image106.png" alt="Zone créée">
+                <img src="assets/projets/eval-reseau/image108.png" alt="Détails zone">
+                <img src="assets/projets/eval-reseau/image110.png" alt="Enregistrements PTR">
+            </div>
+
+            <p>J'ajoute ensuite <strong>2 redirecteurs</strong> pour le service DNS (résolution publique) :</p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image112.png" alt="Propriétés DNS">
+                <img src="assets/projets/eval-reseau/image114.png" alt="Ajout redirecteurs">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image116.png" alt="Redirecteurs configurés">
+                <img src="assets/projets/eval-reseau/image118.png" alt="Validation DNS">
+            </div>
+        </div>
+
+        <div id="dc2" class="content-block fade-in">
+            <h3>7. Promotion du contrôleur secondaire (Paige / DC2)</h3>
+            <p>
+                J'ajoute <strong>Paige</strong> en tant que membre du domaine, puis je le promouvois en
+                contrôleur de domaine secondaire. Pour cela, je clique sur <em>WORKGROUP</em> dans le serveur local
+                de DC2 et je modifie :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image120.png" alt="WORKGROUP modifier">
+                <img src="assets/projets/eval-reseau/image122.png" alt="Rejoindre domaine">
+                <img src="assets/projets/eval-reseau/image124.png" alt="Connexion réussie">
+            </div>
+
+            <p>
+                Je promouvois ensuite Paige en contrôleur de domaine secondaire. J'ajoute d'abord le rôle AD DS,
+                puis depuis le drapeau de notifications, <em>Promouvoir ce serveur en contrôleur de domaine</em> :
+            </p>
+            <img src="assets/projets/eval-reseau/image126.png" alt="Ajout rôle AD DS sur DC2" class="proc-img" style="max-width:550px;">
+
+            <p>
+                Je choisis <em>Ajouter un contrôleur de domaine à un domaine existant</em> et je renseigne les
+                informations du compte d'administration du domaine :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image128.png" alt="Configuration déploiement">
+                <img src="assets/projets/eval-reseau/image130.png" alt="Options DC secondaire">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image132.png" alt="DNS DC2">
+                <img src="assets/projets/eval-reseau/image134.png" alt="Options supplémentaires">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image136.png" alt="Chemins DC2">
+                <img src="assets/projets/eval-reseau/image138.png" alt="Vérification prérequis">
+                <img src="assets/projets/eval-reseau/image140.png" alt="Promotion terminée">
+            </div>
+        </div>
+
+        <div id="basculement" class="content-block fade-in">
+            <h3>8. Basculement DHCP entre DC1 et DC2</h3>
+            <p>
+                Je configure ensuite un <strong>basculement DHCP</strong> entre DC1 (Lamar) et DC2 (Paige) pour
+                assurer la <strong>redondance</strong>. J'installe d'abord le rôle DHCP sur Paige, puis je termine
+                la configuration via le drapeau :
+            </p>
+            <img src="assets/projets/eval-reseau/image142.png" alt="Terminer config DHCP DC2" class="proc-img" style="max-width:550px;">
+
+            <p>
+                Depuis Lamar, dans la console DHCP : clic droit sur l'étendue dont je veux faire le basculement
+                <em>→ Configurer un basculement</em> :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image144.png" alt="Clic droit étendue">
+                <img src="assets/projets/eval-reseau/image146.png" alt="Assistant basculement">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image148.png" alt="Serveur partenaire">
+                <img src="assets/projets/eval-reseau/image150.png" alt="Mode basculement">
+                <img src="assets/projets/eval-reseau/image152.png" alt="Basculement configuré">
+            </div>
+
+            <p>
+                J'éteins ensuite le DHCP de Lamar pour <strong>tester le basculement</strong> et je vérifie que les
+                PC clients reçoivent bien une IP depuis Paige :
+            </p>
+            <img src="assets/projets/eval-reseau/image154.png" alt="Test basculement" class="proc-img" style="max-width:500px;">
+
+            <div class="proc-img-row">
+                <div>
+                    <img src="assets/projets/eval-reseau/image156.png" alt="IP Franklin via DC2">
+                    <span class="img-caption">Franklin</span>
+                </div>
+                <div>
+                    <img src="assets/projets/eval-reseau/image158.png" alt="IP Michael via DC2">
+                    <span class="img-caption">Michael</span>
+                </div>
+            </div>
+
+            <p>
+                Le script de création des utilisateurs et OU est ensuite modifié et exécuté. Tout a bien été créé
+                dans <em>Utilisateurs et ordinateurs Active Directory</em> :
+            </p>
+            <img src="assets/projets/eval-reseau/image160.png" alt="Utilisateurs et OU créés" class="proc-img" style="max-width:600px;">
+        </div>
+
+        <div id="gpo" class="content-block fade-in">
+            <h3>9. Stratégies de groupe (GPO)</h3>
+
+            <h4 style="margin-top:1.5rem;">9.1 Horaires de connexion pour stagiaire_01</h4>
+            <p>
+                Je restreins l'utilisateur <code>stagiaire_01</code> à des connexions du <strong>lundi au vendredi
+                de 8h à 17h</strong> via <em>Propriétés → Compte → Horaires d'accès</em> :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image162.png" alt="Propriétés stagiaire_01">
+                <img src="assets/projets/eval-reseau/image164.png" alt="Horaires d'accès">
+                <img src="assets/projets/eval-reseau/image166.png" alt="Vérification horaires">
+            </div>
+
+            <h4 style="margin-top:1.5rem;">9.2 GPO Raccourci bureau (Salle Informatique)</h4>
+            <p>
+                Je crée une nouvelle GPO liée à l'OU <em>Salle Informatique</em>, qui déploie un raccourci sur le
+                bureau utilisateur pointant vers
+                <a href="https://docs.microsoft.com/fr-fr/learn/" target="_blank" rel="noopener">docs.microsoft.com/fr-fr/learn/</a>.
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image168.png" alt="Créer GPO Salle Info">
+                <img src="assets/projets/eval-reseau/image170.png" alt="Nommer GPO">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image172.png" alt="Modifier GPO">
+                <img src="assets/projets/eval-reseau/image174.png" alt="Config raccourci">
+                <img src="assets/projets/eval-reseau/image176.png" alt="URL raccourci">
+            </div>
+
+            <h4 style="margin-top:1.5rem;">9.3 GPO Désactiver l'invite de commandes (Salle Soudure)</h4>
+            <p>
+                Je crée une GPO liée à l'OU « Salle Soudure » qui <strong>désactive l'accès à l'invite de
+                commandes</strong>. Je vais ensuite double-cliquer sur le paramètre et l'activer :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image178.png" alt="Créer GPO Salle Soudure">
+                <img src="assets/projets/eval-reseau/image179.png" alt="Paramètres GPO">
+                <img src="assets/projets/eval-reseau/image181.png" alt="Politique cmd">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image183.png" alt="Activer désactivation cmd">
+                <img src="assets/projets/eval-reseau/image185.png" alt="GPO activée">
+            </div>
+
+            <h4 style="margin-top:1.5rem;">9.4 Joindre les PC clients au domaine</h4>
+            <p>
+                Je connecte Franklin et Michael au domaine <code>romain.eval</code>. Sur chaque poste :
+                <em>Paramètres → Système → Domaine ou groupe de travail → Modifier</em>, puis je rejoins le domaine.
+                L'utilisateur <code>Stagiaire-01</code> se connecte sur Franklin et <code>Stagiaire-04</code> sur Michael :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image187.png" alt="Informations système">
+                <img src="assets/projets/eval-reseau/image189.png" alt="Modifier domaine">
+                <img src="assets/projets/eval-reseau/image191.png" alt="Rejoindre domaine">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image193.png" alt="Authentification">
+                <img src="assets/projets/eval-reseau/image195.png" alt="Bienvenue domaine">
+                <img src="assets/projets/eval-reseau/image196.png" alt="Redémarrage requis">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image198.png" alt="Connexion Stagiaire-01">
+                <img src="assets/projets/eval-reseau/image200.png" alt="Vérification utilisateur">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image202.png" alt="GPO appliquées">
+                <img src="assets/projets/eval-reseau/image204.png" alt="Validation finale">
+            </div>
+        </div>
+
+        <div id="bginfo" class="content-block fade-in">
+            <h3>10. Déploiement de BGInfo par GPO</h3>
+            <p>
+                J'installe BGInfo depuis
+                <a href="https://learn.microsoft.com/fr-fr/sysinternals/downloads/bginfo" target="_blank" rel="noopener">learn.microsoft.com/sysinternals/downloads/bginfo</a>
+                puis je le copie dans :
+            </p>
+            <div class="cmd-block">C:\Windows\SYSVOL\sysvol\romain.eval\scripts</div>
+            <p>
+                Ce dossier est <strong>répliqué automatiquement</strong> sur tous les contrôleurs de domaine.
+                Je crée ensuite la GPO sur le domaine pour qu'elle s'applique à tous les ordinateurs et aux DC :
+            </p>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image206.png" alt="Créer GPO BGInfo">
+                <img src="assets/projets/eval-reseau/image208.png" alt="Script PowerShell">
+            </div>
+            <div class="proc-img-row">
+                <img src="assets/projets/eval-reseau/image210.png" alt="Config BGInfo">
+                <img src="assets/projets/eval-reseau/image212.png" alt="Application GPO">
+                <img src="assets/projets/eval-reseau/image214.png" alt="Vérification BGInfo">
+            </div>
+        </div>
+
+        <div id="bilan" class="content-block fade-in">
+            <h3>11. Bilan et compétences mobilisées</h3>
+            <p>
+                Cette évaluation pratique m'a permis de mettre en œuvre, <strong>de bout en bout</strong>, une
+                infrastructure réseau d'entreprise comparable à celle de mon Projet 1 (AD DS) et de mon Projet 2
+                (PFsense), mais cette fois dans un cadre <strong>noté et chronométré</strong>.
+            </p>
+            <p>Compétences SISR mobilisées :</p>
+            <ul>
+                <li><strong>Active Directory</strong> : création d'une forêt, promotion d'un DC primaire et d'un DC secondaire, gestion des utilisateurs / OU via script.</li>
+                <li><strong>Services réseau</strong> : DHCP (étendue, réservation, intégration AD, <em>basculement</em>), DNS (zone inverse, redirecteurs publics).</li>
+                <li><strong>Haute disponibilité</strong> : configuration d'un basculement DHCP entre deux contrôleurs, redondance DNS.</li>
+                <li><strong>Sécurité du SI</strong> : pare-feu PFsense avec HTTPS et certificat, GPO de durcissement (désactivation invite de commandes, restriction horaire).</li>
+                <li><strong>Gestion centralisée</strong> : déploiement d'applications (BGInfo) et de paramètres utilisateur (raccourci bureau) via GPO et SYSVOL.</li>
+                <li><strong>Virtualisation</strong> : mise en place et préparation de plusieurs VMs Windows Server et Windows 11 sous VMware.</li>
+            </ul>
+            <p>
+                <em>Remarques formateur :</em> ajouter DC02 également comme DNS secondaire, et configurer le
+                basculement DHCP en mode <em>réserve à chaud</em> plutôt qu'<em>équilibrage de charge</em>
+                conformément à la demande du client. Ces deux points sont à corriger pour une mise en production
+                réelle.
+            </p>
+        </div>
+
+        <a href="projets.html" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Retour aux projets
+        </a>
+
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div>
+                <div class="logo" style="color:white; margin-bottom: 0.75rem;"><span class="logo-dot"></span>Romain DIEUNON</div>
+                <p style="color:#94a3b8; font-size: 0.9rem;">Alternant Bachelor Spécialiste Cybersécurité — À la recherche d'une alternance en cybersécurité défensive.</p>
+                <div class="socials">
+                    <a href="https://www.linkedin.com/in/romain-dieunon" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.063 2.063 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=romaindieunon26@gmail.com" target="_blank" rel="noopener" class="social-link" aria-label="Email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+                    <a href="tel:0603413020" class="social-link" aria-label="Téléphone"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
+                </div>
+            </div>
+            <div>
+                <h4>Navigation</h4>
+                <a href="index.html">Accueil</a>
+                <a href="profil.html">Profil</a>
+                <a href="projets.html">Projets</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div>
+                <h4>Mentions légales</h4>
+                <a href="mentions-legales.html">Mentions légales</a>
+                <a href="tel:0603413020">06 03 41 30 20</a>
+                <a href="https://mail.google.com/mail/?view=cm&fs=1&to=romaindieunon26@gmail.com" target="_blank" rel="noopener">romaindieunon26@gmail.com</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © <span id="year"></span> Romain Dieunon. Tous droits réservés.
+        </div>
+    </div>
+</footer>
+
+<!-- Lightbox zoomable (cible #proc-lightbox dans js/script.js) -->
+<div id="proc-lightbox" class="proc-lightbox" aria-hidden="true">
+    <button class="proc-lightbox-close" aria-label="Fermer">&times;</button>
+    <img id="proc-lightbox-img" src="" alt="">
+</div>
+
+<script src="js/script.js"></script>
+</body>
+</html>

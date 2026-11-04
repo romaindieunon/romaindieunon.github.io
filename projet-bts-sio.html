@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projet BTS SIO — Romain Dieunon</title>
+    <meta name="description" content="Projet BTS SIO SISR (épreuve E6) : infrastructure Active Directory, DNS, DHCP et pare-feu pfSense en haute disponibilité.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Romain Dieunon">
+    <meta property="og:title" content="Projet BTS SIO — Romain Dieunon">
+    <meta property="og:description" content="Projet BTS SIO SISR (épreuve E6) : infrastructure Active Directory, DNS, DHCP et pare-feu pfSense en haute disponibilité.">
+    <meta property="og:url" content="https://romaindieunon.github.io/projet-bts-sio.html">
+    <meta property="og:image" content="https://romaindieunon.github.io/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="fr_FR">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://romaindieunon.github.io/projet-bts-sio.html">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230ea5e9'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' fill='white' font-family='Inter,sans-serif' font-size='14' font-weight='700'%3ERD%3C/text%3E%3C/svg%3E">
+    <style>
+        .project-duo {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-top: 1rem;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .project-big-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        .project-big-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
+        }
+        .project-big-card .project-number {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.35);
+        }
+        .project-big-card h3 {
+            margin: 0.25rem 0 0;
+            font-size: 1.35rem;
+        }
+        .project-big-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin: 0;
+        }
+        .project-big-card .btn {
+            margin-top: 0.75rem;
+        }
+        @media (max-width: 760px) {
+            .project-duo { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-wrap">
+        <a href="index.html" class="logo"><span class="logo-dot"></span>Romain DIEUNON</a>
+        <button class="nav-toggle" aria-label="Ouvrir le menu"><span></span><span></span><span></span></button>
+        <ul class="nav-links">
+            <li><a href="index.html">Accueil</a></li>
+            <li><a href="profil.html">Profil</a></li>
+            <li><a href="projets.html" class="active">Projets</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </div>
+</nav>
+
+<section class="page-hero">
+    <div class="container">
+        <p class="breadcrumb"><a href="index.html">Accueil</a> / <a href="projets.html">Projets</a> / Projet BTS SIO</p>
+        <h1>Projet BTS SIO</h1>
+        <p>Les deux projets que j'ai présentés à l'épreuve E6 du BTS SIO SISR : une infrastructure Active Directory et un pare-feu pfSense en haute disponibilité, sur le même réseau.</p>
+    </div>
+</section>
+
+<!-- PRÉSENTATION -->
+<section>
+    <div class="container">
+        <div class="content-block fade-in">
+            <h3>À propos de ce projet</h3>
+            <p>
+                Pour l'épreuve E6 du BTS SIO SISR, j'ai mené des projets d'infrastructure de bout en bout. J'y ai présenté deux projets complémentaires, construits sur
+                le même réseau segmenté en VLAN.
+            </p>
+            <p>
+                Le schéma ci-dessous donne la vue d'ensemble. Cliquez ensuite sur un projet pour consulter sa
+                procédure complète : contexte, objectifs, mise en œuvre pas à pas avec captures, tests et bilan.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- SCHÉMA RÉSEAU GLOBAL -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in" style="text-align:center; margin-bottom:1.5rem;">
+            <p class="section-kicker">Architecture globale</p>
+            <h2>Schéma réseau du projet</h2>
+            <p>Vue d'ensemble de l'infrastructure commune aux deux projets.</p>
+        </div>
+
+        <figure class="proc-screen fade-in" style="margin: 1rem auto 2rem; max-width: 1400px;">
+            <img src="assets/projets/schema-reseau.png"
+                 alt="Schéma réseau global du projet — VLAN serveur 192.168.200.0/24, VLAN client 192.168.201.0/24, pare-feu PFsense Alpha &amp; Lambda en CARP, switch Cisco Theta, contrôleurs de domaine Beta &amp; Delta, GLPI, TrueNAS, Proxmox, borne Wi-Fi ETA et postes clients ZET-01/ZET-02"
+                 style="width:100%; height:auto; display:block; border:1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); background:#fff; cursor: zoom-in;">
+            <figcaption style="text-align:center; font-style:italic; color: var(--text-muted); margin-top: 0.75rem; font-size: 0.95rem;">
+                Schéma réseau global — commun aux Projet 1 (AD/DNS/DHCP) et Projet 2 (PFsense / VLAN). Cliquer pour agrandir.
+            </figcaption>
+        </figure>
+
+        <div class="content-block fade-in" style="max-width: 1100px; margin: 0 auto;">
+            <h3 style="margin-top:0;">Points clés de l'architecture</h3>
+            <ul>
+                <li><strong>Deux pare-feu PFsense redondés</strong> — Alpha (principal) et Lambda (secours) en haute disponibilité <em>CARP</em>, point d'entrée unique sur l'IP virtuelle <code>192.168.100.1</code>.</li>
+                <li><strong>Switch Cisco Theta</strong> — segmentation par ports : VLAN 200 (serveurs), VLAN 201 (clients), trunks vers les PFsense.</li>
+                <li><strong>VLAN 200 — Serveurs</strong> (<code>192.168.200.0/24</code>) : Beta &amp; Delta (AD DS / DNS / DHCP), Epsilon (GLPI), Kappa (TrueNAS), Gamma (Proxmox).</li>
+                <li><strong>VLAN 201 — Clients</strong> (<code>192.168.201.0/24</code>) : borne Wi-Fi ETA en IP fixe, postes ZET-01 (réservation DHCP) et ZET-02, passerelle <code>192.168.201.250</code>.</li>
+                <li><strong>Continuité de service</strong> — réplication AD entre les 2 DC + DHCP en <em>Hot Standby</em> Beta ↔ Delta.</li>
+                <li><strong>Domaine AD</strong> : <code>btssio.rd</code> (NetBIOS <code>BTSSIO</code>) — nommage des serveurs par lettres grecques (RFC 1178).</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- PROJETS -->
+<section class="section-alt">
+    <div class="container">
+        <div class="section-header fade-in">
+            <p class="section-kicker">Mes projets</p>
+            <h2>Les deux projets</h2>
+            <p>Sélectionnez un projet pour consulter la procédure détaillée.</p>
+        </div>
+
+        <div class="project-duo">
+
+            <div class="project-big-card fade-in">
+                <div class="project-number">1</div>
+                <span class="project-type">Projet 1 — Windows Server</span>
+                <h3>Active Directory, DNS &amp; DHCP</h3>
+                <p>Déploiement d'une infrastructure AD (domaine <code>btssio.rd</code>) dans un réseau segmenté en VLAN (serveur 192.168.200.0/24, client 192.168.201.0/24), avec deux contrôleurs Beta &amp; Delta, DHCP en basculement, DNS, OU, utilisateurs et GPO.</p>
+                <a href="projet1.html" class="btn btn-primary">
+                    Voir la procédure
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
+            </div>
+
+            <div class="project-big-card fade-in">
+                <div class="project-number">2</div>
+                <span class="project-type">Projet 2 — Sécurité réseau</span>
+                <h3>PFsense — Pare-feu et VLAN</h3>
+                <p>Mise en place de deux pare-feu PFsense redondés (Alpha &amp; Lambda) avec CARP, segmentation VLAN serveur/client et routage inter-VLAN.</p>
+                <a href="projet2.html" class="btn btn-primary">
+                    Voir la procédure
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div>
+                <div class="logo" style="color:white; margin-bottom: 0.75rem;"><span class="logo-dot"></span>Romain DIEUNON</div>
+                <p style="color:#94a3b8; font-size: 0.9rem;">Alternant Bachelor Spécialiste Cybersécurité — À la recherche d'une alternance en cybersécurité défensive.</p>
+                <div class="socials">
+                    <a href="https://www.linkedin.com/in/romain-dieunon" target="_blank" rel="noopener" class="social-link" aria-label="LinkedIn"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.063 2.063 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a>
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=romaindieunon26@gmail.com" target="_blank" rel="noopener" class="social-link" aria-label="Email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></a>
+                    <a href="tel:0603413020" class="social-link" aria-label="Téléphone"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
+                </div>
+            </div>
+            <div>
+                <h4>Navigation</h4>
+                <a href="index.html">Accueil</a>
+                <a href="profil.html">Profil</a>
+                <a href="projets.html">Projets</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div>
+                <h4>Mentions légales</h4>
+                <a href="mentions-legales.html">Mentions légales</a>
+                <a href="tel:0603413020">06 03 41 30 20</a>
+                <a href="https://mail.google.com/mail/?view=cm&fs=1&to=romaindieunon26@gmail.com" target="_blank" rel="noopener">romaindieunon26@gmail.com</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © <span id="year"></span> Romain Dieunon. Tous droits réservés.
+        </div>
+    </div>
+</footer>
+
+<div id="proc-lightbox" class="proc-lightbox" aria-hidden="true">
+    <button class="proc-lightbox-close" aria-label="Fermer">&times;</button>
+    <img id="proc-lightbox-img" src="" alt="">
+</div>
+
+<script src="js/script.js"></script>
+</body>
+</html>
